@@ -2,8 +2,26 @@
 %TAG !u! tag:unity3d.com,2011:
 --- !u!78 &1
 TagManager:
-  serializedVersion: 2
-  tags: []
+  serializedVersion: 3
+  tags:
+  - pipette
+  - dnatube
+  - well
+  - ptc
+  - ntc
+  - s1
+  - s2
+  - s3
+  - s4
+  - s5
+  - s1-d
+  - s2-d
+  - s3-d
+  - s4-d
+  - s5-d
+  - plate
+  - mastermix
+  - platecover
   layers:
   - Default
   - TransparentFX
@@ -50,27 +68,3 @@ TagManager:
   - Light Layer 5
   - Light Layer 6
   - Light Layer 7
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 

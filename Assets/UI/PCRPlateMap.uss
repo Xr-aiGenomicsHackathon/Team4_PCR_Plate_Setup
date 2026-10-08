@@ -1,0 +1,34 @@
+.screen { width: 1600px; height: 900px; padding: 54px 62px 42px; background-color: #F4F6F2; color: #183B33; }
+.header { height: 154px; flex-direction: row; justify-content: space-between; align-items: flex-start; border-bottom-width: 2px; border-bottom-color: #DCE4DE; }
+.eyebrow { color: #238A70; font-size: 19px; letter-spacing: 3px; -unity-font-style: bold; }
+.title { margin-top: 14px; color: #183B33; font-size: 49px; -unity-font-style: bold; }
+.subtitle { margin-top: 9px; color: #71827A; font-size: 20px; }
+.run-chip { margin-top: 12px; padding: 14px 20px; flex-direction: row; align-items: center; background-color: #E5F0EA; border-radius: 24px; }
+.status-dot { width: 11px; height: 11px; margin-right: 11px; background-color: #2BA57F; border-radius: 6px; }
+.run-text { color: #27765F; font-size: 16px; letter-spacing: 1.5px; -unity-font-style: bold; }
+.legend { height: 88px; padding-top: 18px; flex-direction: row; align-items: center; border-bottom-width: 1px; border-bottom-color: #E2E8E3; }
+.legend-title { width: 110px; color: #809088; font-size: 15px; letter-spacing: 2px; -unity-font-style: bold; }
+.legend-item { margin-right: 30px; flex-direction: row; align-items: center; }
+.legend-text { margin-left: 10px; color: #53675E; font-size: 17px; }
+.table { margin-top: 17px; }
+.column-row { height: 41px; flex-direction: row; }
+.row-spacer, .row-label { width: 62px; flex-shrink: 0; justify-content: center; align-items: center; }
+.columns { flex-grow: 1; flex-direction: row; justify-content: space-between; }
+.column-head { flex-grow: 1; align-items: center; justify-content: center; }
+.column-number { color: #8C9C94; font-size: 15px; -unity-font-style: bold; }
+.plate-row { height: 74px; flex-direction: row; align-items: center; border-bottom-width: 1px; border-bottom-color: #E3E9E4; }
+.row-label { align-items: flex-start; }
+.row-letter { color: #238A70; font-size: 22px; -unity-font-style: bold; }
+.well { min-width: 0; flex-grow: 1; height: 61px; margin-left: 3px; margin-right: 3px; justify-content: center; align-items: center; background-color: #FFFFFF; border-width: 1px; border-color: #E5EAE6; border-radius: 9px; }
+.well-label { margin-top: 3px; color: #334B41; font-size: 16px; -unity-font-style: bold; }
+.well-sub { margin-top: 1px; color: #809088; font-size: 11px; letter-spacing: 1px; -unity-font-style: bold; }
+.marker { width: 15px; height: 15px; margin-bottom: 3px; }
+.positive-marker { background-color: #51C999; border-radius: 8px; }
+.negative-marker { background-color: #E75C69; border-radius: 8px; }
+.sample-marker { background-color: #9270D9; border-radius: 3px; }
+.duplicate-marker { background-color: #4B8ED8; border-radius: 3px; }
+.footer { height: 62px; margin-top: 15px; flex-direction: row; align-items: center; justify-content: space-between; }
+.footer-mark { flex-direction: row; align-items: center; }
+.footer-line { width: 26px; height: 3px; margin-right: 10px; background-color: #2A9A78; }
+.footer-copy { color: #35856D; font-size: 14px; letter-spacing: 2px; -unity-font-style: bold; }
+.footer-note { color: #7B8982; font-size: 14px; }

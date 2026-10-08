@@ -23,24 +23,24 @@ public sealed class PCRGuideUIController : MonoBehaviour
     private static readonly string[] Summaries = {
         "This is our PCR plate. It has 96 tiny wells. Each well has a job.",
         "Practice the plate coordinates first: follow the prompts to locate wells A1 through D6. Apply the confirmed control and sample allocation after this coordinate check.",
-        "Add 20 µL of prepared master mix to each required reaction well. The master mix itself is prepared by Team 3.",
-        "Place the positive template control in its designated well. Include the no-template control if it is part of the confirmed map.",
-        "Add 5 µL of each sample to its assigned well. Check the sample identity before dispensing.",
-        "Where the confirmed plate map calls for a duplicate, place the same sample in its second assigned well.",
+        "Touch the prepared master mix tray with the pipette, then contact at least two different sample columns.",
+        "Touch both the PTC and NTC columns with the pipette.",
+        "Touch any DNA tube with the pipette, then contact at least three different sample columns.",
+        "Use the pipette to contact at least three different sample-duplicate columns marked with “-D” in the template.",
         "Review the well, sample, volume and control assignments before the plate is sealed.",
         "Lower the sealing film evenly across the plate, then prepare it for handoff to Team 5."
     };
     private static readonly string[] Tasks = {
-        "Take a closer look", "Locate wells A1–D6", "Dispense the master mix", "Place the controls",
-        "Add each sample", "Complete required duplicates", "Run the final checklist", "Seal and hand off"
+        "Hover over three columns", "Locate wells A1–D6", "Touch master mix and two sample columns", "Contact PTC and NTC",
+        "Contact DNA tube and 3 sample columns", "Contact 3 sample-duplicate columns", "Run the final checklist", "Seal and hand off"
     };
     private static readonly string[] Instructions = {
-        "Look over the plate and notice how the wells are arranged before you begin.",
+        "Hover over any three different labeled columns with the ray. Each visited column stays highlighted; after the third, continue to the next stage.",
         "Follow the prompts and use the XR ray to select wells A1 through D6 in row order. Each correct well is marked green.",
-        "Pick up the prepared master mix and micropipette. Dispense 20 µL into the required reaction wells.",
-        "Use a separate, clearly identified control sample for each assigned control well. Avoid mixing up PTC and NTC.",
-        "Select a sample tube, then deliver 5 µL to the well assigned to that sample. Repeat for each required sample.",
-        "Check the map for duplicate assignments. Repeat the correct sample in its paired well where required.",
+        "Touch the prepared master mix tray with the pipette, then touch at least two different sample columns. The cones in each contacted column will rise.",
+        "Contact the PTC column and the NTC column with the pipette. Both columns must be touched to complete this stage.",
+        "Touch any DNA tube with the pipette, then touch at least three different sample columns. Each contacted column's cones will rise.",
+        "Contact at least three different sample-duplicate columns marked with “-D” in the template using the pipette.",
         "Confirm every checklist item below against the plate before sealing it.",
         "Position the sealing film, smooth it across the plate and confirm the plate is ready for handoff."
     };
@@ -61,13 +61,14 @@ public sealed class PCRGuideUIController : MonoBehaviour
 
     private VisualElement root, progressFill, actionStatus, volumeChip, checklist;
     private Label kicker, title, summary, badge, task, instruction, volume, statusTitle,
-        statusDetail, audioCaption, audioState, progressCount, footerHint;
-    private Button confirm, next, previous, listen, demo;
+        statusDetail, audioCaption, audioState, progressCount; //footerHint
+    private Button confirm, previous, listen, demo; //next
     private Button[] stepButtons;
     private Toggle[] checks;
     private readonly bool[] completed = new bool[8];
     private int currentStep;
     private int highestUnlockedStep;
+    private bool uiReady;
 
     private void Awake()
     {
@@ -82,11 +83,30 @@ public sealed class PCRGuideUIController : MonoBehaviour
 
     private void Start()
     {
-        if (document == null || document.rootVisualElement == null) return;
-        root = document.rootVisualElement;
+        if (EnsureUIReady()) Refresh();
+    }
+
+    private void Update()
+    {
+        if (document == null) document = GetComponent<UIDocument>();
+        if (document != null && uiReady && document.rootVisualElement != root)
+            uiReady = false;
+        if (!uiReady && EnsureUIReady()) Refresh();
+    }
+
+    private bool EnsureUIReady()
+    {
+        if (uiReady) return true;
+        if (document == null) document = GetComponent<UIDocument>();
+        if (document == null || !document.enabled) return false;
+        var candidate = document.rootVisualElement;
+        if (candidate == null || candidate.panel == null) return false;
+        root = candidate;
         CacheUI();
+        if (kicker == null || title == null || summary == null || badge == null || task == null || instruction == null || audioCaption == null || progressCount == null || progressFill == null || volumeChip == null || volume == null || checklist == null || actionStatus == null || statusTitle == null || statusDetail == null || confirm == null || previous == null || audioState == null ) return false; //|| footerHint == null next == null ||
         BindUI();
-        Refresh();
+        uiReady = true;
+        return true;
     }
 
     private void OnDisable()
@@ -112,9 +132,9 @@ public sealed class PCRGuideUIController : MonoBehaviour
         audioCaption = root.Q<Label>("audio-caption");
         audioState = root.Q<Label>("audio-state");
         progressCount = root.Q<Label>("progress-count");
-        footerHint = root.Q<Label>("footer-hint");
+        // footerHint = root.Q<Label>("footer-hint");
         confirm = root.Q<Button>("action-done");
-        next = root.Q<Button>("next-step");
+        // next = root.Q<Button>("next-step");
         previous = root.Q<Button>("previous-step");
         listen = root.Q<Button>("replay-audio");
         demo = root.Q<Button>("play-demo");
@@ -134,7 +154,7 @@ public sealed class PCRGuideUIController : MonoBehaviour
     private void BindUI()
     {
         if (confirm != null) confirm.clicked += ConfirmAction;
-        if (next != null) next.clicked += NextStep;
+        // if (next != null) next.clicked += NextStep;
         if (previous != null) previous.clicked += PreviousStep;
         if (listen != null) listen.clicked += PlayNarration;
         if (demo != null) demo.clicked += PlayDemonstration;
@@ -179,9 +199,16 @@ public sealed class PCRGuideUIController : MonoBehaviour
 
     private void ConfirmAction()
     {
-        if (currentStep == 6 && !AllChecksComplete()) return;
+        if (currentStep == 6 && !AllChecksComplete())
+        {
+            if (statusDetail != null) statusDetail.text = "Check all four checklist items before confirming.";
+            return;
+        }
         CompleteCurrentAction();
+        if (currentStep < 8)
+            NextStep();
     }
+
 
     /// <summary>Call this from an XR interaction after validating the learner's action.</summary>
     public void CompleteCurrentAction()
@@ -229,6 +256,10 @@ public sealed class PCRGuideUIController : MonoBehaviour
 
     private void Refresh()
     {
+        if (document == null) document = GetComponent<UIDocument>();
+        if (document != null && uiReady && document.rootVisualElement != root)
+            uiReady = false;
+        if (!EnsureUIReady()) return;
         int n = currentStep + 1;
         kicker.text = $"STAGE {n:00}  /  {Categories[currentStep]}";
         title.text = Titles[currentStep];
@@ -246,13 +277,13 @@ public sealed class PCRGuideUIController : MonoBehaviour
         statusTitle.text = completed[currentStep] ? (currentStep == 7 ? "Guide complete" : "Task confirmed") : "Ready when you are";
         statusDetail.text = completed[currentStep]
             ? "This stage is complete. Continue when you’re ready."
-            : "Perform the task, then confirm it to unlock the next stage.";
+            : (currentStep == 6 ? "Check all four checklist items, then confirm to continue." : "Perform the task, then confirm it to unlock the next stage.");
         confirm.text = completed[currentStep] ? (currentStep == 7 ? "Finished ✓" : "Completed ✓") : "Confirm task";
         confirm.SetEnabled(!completed[currentStep] && (currentStep != 6 || AllChecksComplete()));
         previous.SetEnabled(currentStep > 0);
-        next.SetEnabled(currentStep < 7 && completed[currentStep]);
-        footerHint.text = currentStep == 7 ? (completed[currentStep] ? "Guide complete · Plate ready for handoff" : "Final stage · confirm to finish")
-            : (completed[currentStep] ? "Stage complete" : "Confirm the task to continue");
+        // next.SetEnabled(currentStep < 7 && completed[currentStep]);
+        // footerHint.text = currentStep == 7 ? (completed[currentStep] ? "Guide complete · Plate ready for handoff" : "Final stage · confirm to finish")
+        //     : (completed[currentStep] ? "Stage complete" : "Confirm the task to continue");
         audioState.text = narrationClips != null && narrationClips.Length > currentStep &&
             narrationClips[currentStep] != null
             ? $"Narration ready · {narrationClips[currentStep].length:0} sec"
