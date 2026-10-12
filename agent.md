@@ -67,3 +67,8 @@ The 96-well indexing and A1–D6 orientation were inferred from hierarchy names 
 - The root-level guide source is `clipguide.md`. Read it before changing instructional content.
 - Preserve existing Unity scene references and Animator state names. Verify serialized references after edits.
 - At the last inspection on 2026-10-05, the Console error query returned no errors after attaching the map interaction. This is not a guarantee about later editor state.
+
+
+### Seal animation playback fix (2026-10-06)
+
+The guide Play Demonstration button routes to the selected Animator state through PCRGuideUIController.PlayDemonstration. The final step maps to 08_Seal. The editable Assets/Animation/08_Seal_CoverSide.anim had been flattened during cover synchronization, removing the authored seal movement. Its ten Cover transform curves have now been restored from the original 08_Seal clip in Assets/Prefabs/pcr_plate_setup_animation.fbx. Verified that the Animator state 08_Seal uses the editable clip and the cover position curves vary through the clip. Steps 2–7 keep the cover parked at the side pose; step 8 animates the seal action.

@@ -1,1 +1,119 @@
-<ui:UXML xmlns:ui="UnityEngine.UIElements"><ui:Style src="PCRPlateGuide.uss"/><ui:VisualElement name="screen" class="screen"><ui:VisualElement class="rail"><ui:Label text="VIRTUAL LAB  /  PCR" class="brand"/><ui:Label text="GUIDED PRACTICAL" class="eyebrow"/><ui:Label text="Prepare the plate" class="rail-title"/><ui:Label text="Take each stage at your own pace." class="rail-copy"/><ui:VisualElement class="progress-row"><ui:Label text="YOUR PROGRESS" class="micro"/><ui:Label name="progress-count" text="01 / 08" class="count"/></ui:VisualElement><ui:VisualElement class="track"><ui:VisualElement name="progress-fill" class="fill"/></ui:VisualElement><ui:VisualElement class="steps"><ui:Button name="step-1" class="step current"><ui:Label text="01" class="num"/><ui:Label text="Meet the plate" class="step-name"/><ui:Label name="step-mark-1" text="●" class="check"/></ui:Button><ui:Button name="step-2" class="step"><ui:Label text="02" class="num"/><ui:Label text="Make the map" class="step-name"/><ui:Label name="step-mark-2" class="check"/></ui:Button><ui:Button name="step-3" class="step"><ui:Label text="03" class="num"/><ui:Label text="Master mix" class="step-name"/><ui:Label name="step-mark-3" class="check"/></ui:Button><ui:Button name="step-4" class="step"><ui:Label text="04" class="num"/><ui:Label text="Controls" class="step-name"/><ui:Label name="step-mark-4" class="check"/></ui:Button><ui:Button name="step-5" class="step"><ui:Label text="05" class="num"/><ui:Label text="Samples" class="step-name"/><ui:Label name="step-mark-5" class="check"/></ui:Button><ui:Button name="step-6" class="step"><ui:Label text="06" class="num"/><ui:Label text="Cross-check &amp; duplicates" class="step-name"/><ui:Label name="step-mark-6" class="check"/></ui:Button><ui:Button name="step-7" class="step"><ui:Label text="07" class="num"/><ui:Label text="Check the plate" class="step-name"/><ui:Label name="step-mark-7" class="check"/></ui:Button><ui:Button name="step-8" class="step"><ui:Label text="08" class="num"/><ui:Label text="Seal the plate" class="step-name"/><ui:Label name="step-mark-8" class="check"/></ui:Button></ui:VisualElement><ui:Label text="●  INTERACTIVE LEARNING SESSION" class="foot"/></ui:VisualElement><ui:VisualElement class="card"><ui:VisualElement class="heading"><ui:VisualElement><ui:Label name="step-kicker" text="STAGE 01 / ORIENTATION" class="eyebrow green"/><ui:Label name="step-title" text="Meet the plate" class="title"/></ui:VisualElement><ui:VisualElement class="badge"><ui:Label name="badge-number" text="01"/></ui:VisualElement></ui:VisualElement><ui:Label name="step-summary" text="This is our PCR plate. It has 96 tiny wells. Each well has a job." class="summary"/><ui:VisualElement class="rule"/><ui:VisualElement class="task-head"><ui:Label text="✦  YOUR TASK" class="micro green"/><ui:VisualElement name="volume-chip" class="volume hidden"><ui:Label name="volume-label" text="20 µL"/></ui:VisualElement></ui:VisualElement><ui:Label name="task-title" text="Take a closer look" class="task-title"/><ui:Label name="task-copy" text="Look over the plate and notice how the wells are arranged before you begin." class="task-copy"/><ui:VisualElement name="checklist" class="checklist hidden"><ui:Label text="Confirm before sealing" class="check-title"/><ui:Toggle name="check-well" text="Correct well"/><ui:Toggle name="check-sample" text="Correct sample"/><ui:Toggle name="check-volume" text="Correct volume"/><ui:Toggle name="check-controls" text="Controls correct"/></ui:VisualElement><ui:VisualElement name="action-status" class="status"><ui:VisualElement class="status-dot"/><ui:VisualElement class="status-copy"><ui:Label name="status-title" text="Ready when you are" class="status-title"/><ui:Label name="status-detail" text="Perform the task, then confirm it to unlock the next stage." class="status-detail"/></ui:VisualElement><ui:Button name="action-done" text="Confirm task" class="confirm"/></ui:VisualElement><ui:VisualElement class="audio"><ui:VisualElement class="audio-head"><ui:Label text="♫" class="audio-icon"/><ui:VisualElement><ui:Label text="NARRATION" class="micro"/><ui:Label name="audio-state" text="Ready to listen" class="audio-state"/></ui:VisualElement><ui:VisualElement class="spacer"/><ui:Button name="replay-audio" text="▶  Listen" class="listen"/></ui:VisualElement><ui:VisualElement class="caption-box"><ui:Label name="audio-caption" text="“This is our PCR plate. It has 96 tiny wells. Each well has a job.”" class="caption"/></ui:VisualElement></ui:VisualElement><ui:VisualElement class="demo-row"><ui:Label text="NEED A REFRESHER?" class="micro"/><ui:VisualElement class="spacer"/><ui:Button name="play-demo" text="▷  Show demonstration" class="demo"/></ui:VisualElement><ui:VisualElement class="footer"><ui:Button name="previous-step" text="←  Back" class="back"/><ui:VisualElement class="spacer"/><ui:Label name="footer-hint" text="Confirm the task to continue" class="hint"/><ui:Button name="next-step" text="Continue  →" class="next"/></ui:VisualElement></ui:VisualElement></ui:VisualElement></ui:UXML>
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+    <Style src="project://database/Assets/UI/PCRPlateGuide.uss?fileID=7433441132597879392&amp;guid=daa95d94ca4b74c1cb582c7d8410bae7&amp;type=3#PCRPlateGuide" />
+    <ui:VisualElement name="screen" class="screen">
+        <ui:VisualElement class="rail">
+            <ui:Label text="PCR Plate Setup" class="brand" />
+            <ui:Label text="GUIDED PRACTICAL" class="eyebrow" />
+            <ui:Label text="Prepare the plate" class="rail-title" />
+            <ui:Label text="Take each stage at your own pace." class="rail-copy" />
+            <ui:VisualElement class="progress-row">
+                <ui:Label text="YOUR PROGRESS" class="micro" />
+                <ui:Label name="progress-count" text="01 / 08" class="count" />
+            </ui:VisualElement>
+            <ui:VisualElement class="track">
+                <ui:VisualElement name="progress-fill" class="fill" />
+            </ui:VisualElement>
+            <ui:VisualElement class="steps">
+                <ui:Button name="step-1" class="step current">
+                    <ui:Label text="01" class="num" />
+                    <ui:Label text="Meet the plate" class="step-name" />
+                    <ui:Label name="step-mark-1" text="●" class="check" />
+                </ui:Button>
+                <ui:Button name="step-2" class="step">
+                    <ui:Label text="02" class="num" />
+                    <ui:Label text="Make the map" class="step-name" />
+                    <ui:Label name="step-mark-2" class="check" />
+                </ui:Button>
+                <ui:Button name="step-3" class="step">
+                    <ui:Label text="03" class="num" />
+                    <ui:Label text="Master mix" class="step-name" />
+                    <ui:Label name="step-mark-3" class="check" />
+                </ui:Button>
+                <ui:Button name="step-4" class="step">
+                    <ui:Label text="04" class="num" />
+                    <ui:Label text="Controls" class="step-name" />
+                    <ui:Label name="step-mark-4" class="check" />
+                </ui:Button>
+                <ui:Button name="step-5" class="step">
+                    <ui:Label text="05" class="num" />
+                    <ui:Label text="Samples" class="step-name" />
+                    <ui:Label name="step-mark-5" class="check" />
+                </ui:Button>
+                <ui:Button name="step-6" class="step">
+                    <ui:Label text="06" class="num" />
+                    <ui:Label text="Cross-check &amp; duplicates" class="step-name" />
+                    <ui:Label name="step-mark-6" class="check" />
+                </ui:Button>
+                <ui:Button name="step-7" class="step">
+                    <ui:Label text="07" class="num" />
+                    <ui:Label text="Check the plate" class="step-name" />
+                    <ui:Label name="step-mark-7" class="check" />
+                </ui:Button>
+                <ui:Button name="step-8" class="step">
+                    <ui:Label text="08" class="num" />
+                    <ui:Label text="Seal the plate" class="step-name" />
+                    <ui:Label name="step-mark-8" class="check" />
+                </ui:Button>
+            </ui:VisualElement>
+            <ui:Label text="●  INTERACTIVE LEARNING SESSION" class="foot" />
+        </ui:VisualElement>
+        <ui:VisualElement class="card">
+            <ui:VisualElement class="heading">
+                <ui:VisualElement>
+                    <ui:Label name="step-kicker" text="STAGE 01 / ORIENTATION" class="eyebrow green" />
+                    <ui:Label name="step-title" text="Meet the plate" class="title" />
+                </ui:VisualElement>
+                <ui:VisualElement class="badge">
+                    <ui:Label name="badge-number" text="01" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:Label name="step-summary" text="This is our PCR plate. It has 96 tiny wells. Each well has a job." class="summary" />
+            <ui:VisualElement class="rule" />
+            <ui:VisualElement class="task-head">
+                <ui:Label text="✦  YOUR TASK" class="micro green" />
+                <ui:VisualElement name="volume-chip" class="volume hidden">
+                    <ui:Label name="volume-label" text="20 µL" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:Label name="task-title" text="Take a closer look" class="task-title" />
+            <ui:Label name="task-copy" text="Look over the plate and notice how the wells are arranged before you begin." class="task-copy" />
+            <ui:VisualElement name="checklist" class="checklist hidden">
+                <ui:Label text="Confirm before sealing" class="check-title" />
+                <ui:Toggle name="check-well" text="Correct well" />
+                <ui:Toggle name="check-sample" text="Correct sample" />
+                <ui:Toggle name="check-volume" text="Correct volume" />
+                <ui:Toggle name="check-controls" text="Controls correct" />
+            </ui:VisualElement>
+            <ui:VisualElement name="action-status" class="status">
+                <ui:VisualElement class="status-dot" />
+                <ui:VisualElement class="status-copy">
+                    <ui:Label name="status-title" text="Ready when you are" class="status-title" />
+                    <ui:Label name="status-detail" text="Perform the task, then confirm it to unlock the next stage." class="status-detail" />
+                </ui:VisualElement>
+                <ui:Button name="action-done" text="Confirm task" class="confirm" />
+            </ui:VisualElement>
+            <ui:VisualElement class="audio">
+                <ui:VisualElement class="audio-head">
+                    <ui:Label text="♫" class="audio-icon" />
+                    <ui:VisualElement>
+                        <ui:Label text="NARRATION" class="micro" />
+                        <ui:Label name="audio-state" text="Ready to listen" class="audio-state" />
+                    </ui:VisualElement>
+                    <ui:VisualElement class="spacer" />
+                    <ui:Button name="replay-audio" text="▶  Listen" class="listen" />
+                </ui:VisualElement>
+                <ui:VisualElement class="caption-box">
+                    <ui:Label name="audio-caption" text="“This is our PCR plate. It has 96 tiny wells. Each well has a job.”" class="caption" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:VisualElement class="demo-row">
+                <ui:Label text="NEED A REFRESHER?" class="micro" />
+                <ui:VisualElement class="spacer" />
+                <ui:Button name="play-demo" text="▷  Show demonstration" class="demo" />
+            </ui:VisualElement>
+            <ui:VisualElement class="footer" style="align-items: center; flex-direction: row-reverse;">
+                <ui:Button name="previous-step" text="←  Back" class="back" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

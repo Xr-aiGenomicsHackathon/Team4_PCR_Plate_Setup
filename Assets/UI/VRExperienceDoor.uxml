@@ -1,0 +1,39 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+    <Style src="project://database/Assets/UI/VRExperienceDoor.uss?fileID=7433441132597879392&amp;guid=5adc1053d250acb61aa315d62ca33801&amp;type=3#VRExperienceDoor" />
+    <ui:VisualElement name="screen" class="screen">
+        <ui:VisualElement class="topbar">
+            <ui:VisualElement class="brand-block">
+                <ui:Label text="PCR Plate Set Up" class="brand" />
+            </ui:VisualElement>
+            <ui:VisualElement class="session-badge">
+                <ui:VisualElement class="online-dot" />
+                <ui:Label text="welcom" class="session-label" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement class="main-content" style="flex-direction: row; align-self: auto;">
+            <ui:VisualElement class="intro-column">
+                <ui:Label text="Team 4&#10;PCR Plate Setup&#10;" class="hero-title" />
+                <ui:Label text="Enter the lab to have a work through of your PCR plate setup." class="hero-copy" />
+                <ui:VisualElement class="info-row" />
+                <ui:Button name="start-session" text="START EXPERIENCE     →" class="start-button" />
+            </ui:VisualElement>
+            <ui:VisualElement class="preview-column">
+                <ui:VisualElement class="preview-frame">
+                    <ui:VisualElement name="preview-screen" class="preview-screen">
+                        <ui:VisualElement class="preview-toprow">
+                            <ui:VisualElement class="live-badge">
+                                <ui:VisualElement class="live-dot" />
+                                <ui:Label text="LIVE LAB PREVIEW" class="live-label" />
+                            </ui:VisualElement>
+                            <ui:Button name="toggle-preview" text="Ⅱ  PAUSE" enabled="false" class="preview-toggle" />
+                        </ui:VisualElement>
+                        <ui:VisualElement class="preview-bottom">
+                            <ui:Label text="A look inside" class="preview-title" />
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+                </ui:VisualElement>
+                <ui:Label text="Welcome to the lab!!!" class="micro-label preview-caption" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>
