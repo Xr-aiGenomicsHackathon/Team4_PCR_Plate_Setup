@@ -22,7 +22,7 @@ public sealed class PippetteController : MonoBehaviour
 
     [Header("Stage validation")]
     [SerializeField] private PCRGuideUIController guide;
-    [SerializeField, Min(1)] private int requiredSampleColumns = 2;
+    [SerializeField, Min(1)] private int requiredSampleColumns = 3;
     [SerializeField, Min(1)] private int requiredStageFiveSampleColumns = 3;
     [SerializeField, Min(1)] private int requiredDuplicateColumns = 3;
 
@@ -36,17 +36,17 @@ public sealed class PippetteController : MonoBehaviour
     private TargetVisual selectedVisual;
     private readonly HashSet<Collider> masterMixContacts = new HashSet<Collider>();
     private readonly HashSet<Collider> dnaTubeContacts = new HashSet<Collider>();
-    private readonly HashSet<string> contactedSampleColumns = new HashSet<string>();
+    private readonly HashSet<string> contactedSampleColumns = new HashSet<string>(System.StringComparer.OrdinalIgnoreCase);
     private readonly HashSet<Transform> liftedCones = new HashSet<Transform>();
-    private bool masterMixContacted;
+    private bool masterMixContactReady;
     private bool stageCompleted;
     private bool controlsStageCompleted;
     private bool ptcContacted;
     private bool ntcContacted;
-    private bool dnaTubeContacted;
+    private bool dnaTubeContactReady;
     private bool samplesStageCompleted;
-    private readonly HashSet<string> stageFiveSampleColumns = new HashSet<string>();
-    private readonly HashSet<string> contactedDuplicateColumns = new HashSet<string>();
+    private readonly HashSet<string> stageFiveSampleColumns = new HashSet<string>(System.StringComparer.OrdinalIgnoreCase);
+    private readonly HashSet<string> contactedDuplicateColumns = new HashSet<string>(System.StringComparer.OrdinalIgnoreCase);
     private bool duplicateStageCompleted;
 
     private void Awake()
@@ -71,49 +71,117 @@ public sealed class PippetteController : MonoBehaviour
         {
             ContactsFor(target).Add(other);
             Select(target);
-            if (target == dnaTubeVisual && IsSamplesStageActive())
+
+            // Each fresh trigger-entry event is a source contact. Do not require
+            // every collider under the source root to have exited first; a missed
+            // exit can otherwise block all later source-to-column cycles.
+            if (target == dnaTubeVisual &&
+                (IsSamplesStageActive() || IsDuplicateStageActive()))
             {
-                dnaTubeContacted = true;
-                TryCompleteSamplesStage();
+                dnaTubeContactReady = true;
+                if (guide != null)
+                    guide.SetStepActionFeedback(IsSamplesStageActive()
+                        ? "DNA Tube contacted. Touch one different sample column, then contact the DNA Tube again."
+                        : "DNA Tube contacted. Touch one different duplicate column, then contact the DNA Tube again.");
             }
             if (target == masterMixVisual && IsMasterMixStageActive())
             {
-                masterMixContacted = true;
-                TryCompleteMasterMixStage();
+                masterMixContactReady = true;
+                if (guide != null)
+                    guide.SetStepActionFeedback("Master Mix contacted. Touch one different sample column, then contact Master Mix again.");
             }
         }
 
         var column = ResolveColumn(other);
         if (column == null) return;
+        if ((IsMasterMixStageActive() || IsSamplesStageActive() || IsDuplicateStageActive()) &&
+            !IsNearestOverlappingColumn(column))
+            return;
 
-        LiftColumnCones(column);
-        if (IsSampleColumn(column.name) && IsMasterMixStageActive())
+        if (IsMasterMixStageActive())
         {
-            contactedSampleColumns.Add(column.name);
+            if (!masterMixContactReady)
+            {
+                if (guide != null)
+                    guide.SetStepActionFeedback("Contact Master Mix before each sample column.");
+                return;
+            }
+
+            if (!IsRegularSampleColumn(column.name))
+            {
+                if (guide != null)
+                    guide.SetStepActionFeedback("This step needs a regular sample column. Contact Master Mix again before another column.");
+                return;
+            }
+
+            // Only a valid regular sample column consumes this Master Mix contact.
+            masterMixContactReady = false;
+            LiftColumnCones(column);
+            bool isNewColumn = contactedSampleColumns.Add(column.name);
             if (guide != null)
-                guide.SetStepActionFeedback(
-                    "Master mix contacted · " + contactedSampleColumns.Count + "/" +
-                    requiredSampleColumns + " sample columns contacted");
+                guide.SetStepActionFeedback(isNewColumn
+                    ? "Master Mix cycles · " + contactedSampleColumns.Count + "/" + requiredSampleColumns + " distinct sample columns. Contact Master Mix again before the next column."
+                    : column.name + " was already counted. Contact Master Mix before another different sample column.");
 
             TryCompleteMasterMixStage();
+            return;
         }
 
-        if (IsSampleColumn(column.name) && IsSamplesStageActive())
+        if (IsSamplesStageActive())
         {
-            stageFiveSampleColumns.Add(column.name);
+            if (!dnaTubeContactReady)
+            {
+                if (guide != null)
+                    guide.SetStepActionFeedback("Contact the DNA Tube before each sample column.");
+                return;
+            }
+
+            if (!IsRegularSampleColumn(column.name) || !contactedSampleColumns.Contains(column.name))
+            {
+                if (guide != null)
+                    guide.SetStepActionFeedback("Touch one of the sample columns completed with Master Mix. Contact the DNA Tube again before another column.");
+                return;
+            }
+
+            dnaTubeContactReady = false;
+            LiftColumnCones(column);
+            bool isNewColumn = stageFiveSampleColumns.Add(column.name);
             if (guide != null)
-                guide.SetStepActionFeedback("DNA tube contacted · " + stageFiveSampleColumns.Count + "/" + requiredStageFiveSampleColumns + " sample columns contacted");
+                guide.SetStepActionFeedback(isNewColumn
+                    ? "DNA Tube cycles · " + stageFiveSampleColumns.Count + "/" + contactedSampleColumns.Count + " selected sample columns. Contact the DNA Tube again before the next column."
+                    : column.name + " was already counted. Contact the DNA Tube before another different sample column.");
             TryCompleteSamplesStage();
+            return;
         }
 
-        if (IsDuplicateColumn(column.name) && IsDuplicateStageActive())
+        if (IsDuplicateStageActive())
         {
-            contactedDuplicateColumns.Add(column.name);
+            if (!dnaTubeContactReady)
+            {
+                if (guide != null)
+                    guide.SetStepActionFeedback("Contact the DNA Tube before each duplicate column.");
+                return;
+            }
+
+            if (!IsSelectedDuplicateColumn(column.name))
+            {
+                if (guide != null)
+                    guide.SetStepActionFeedback("Touch the matching -D duplicate of a Master Mix sample column. Contact the DNA Tube again before another column.");
+                return;
+            }
+
+            dnaTubeContactReady = false;
+            LiftColumnCones(column);
+            bool isNewColumn = contactedDuplicateColumns.Add(column.name);
             if (guide != null)
-                guide.SetStepActionFeedback("Duplicate columns contacted · " + contactedDuplicateColumns.Count + "/" + requiredDuplicateColumns);
+                guide.SetStepActionFeedback(isNewColumn
+                    ? "DNA Tube cycles · " + contactedDuplicateColumns.Count + "/" + contactedSampleColumns.Count + " matching duplicate columns. Contact the DNA Tube again before the next column."
+                    : column.name + " was already counted. Contact the DNA Tube before another different duplicate column.");
             TryCompleteDuplicateStage();
+            return;
         }
 
+        LiftColumnCones(column);
         if (IsControlColumn(column.name) && IsControlsStageActive())
         {
             if (column.name.Equals("PTC", System.StringComparison.OrdinalIgnoreCase)) ptcContacted = true;
@@ -152,14 +220,28 @@ public sealed class PippetteController : MonoBehaviour
 
     private static bool IsDuplicateColumn(string columnName)
     {
-        return IsSampleColumn(columnName) && columnName.IndexOf("-D", System.StringComparison.OrdinalIgnoreCase) >= 0;
+        return IsSampleColumn(columnName) && columnName.EndsWith("-D", System.StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsRegularSampleColumn(string columnName)
+    {
+        return IsSampleColumn(columnName) && !IsDuplicateColumn(columnName);
+    }
+
+    private bool IsSelectedDuplicateColumn(string columnName)
+    {
+        if (!IsDuplicateColumn(columnName)) return false;
+        string sourceColumn = columnName.Substring(0, columnName.Length - 2);
+        return contactedSampleColumns.Contains(sourceColumn);
     }
 
     private void TryCompleteDuplicateStage()
     {
-        if (!IsDuplicateStageActive() || contactedDuplicateColumns.Count < requiredDuplicateColumns) return;
+        if (!IsDuplicateStageActive() ||
+            contactedSampleColumns.Count < requiredDuplicateColumns ||
+            !HasEverySelectedDuplicateColumn()) return;
         duplicateStageCompleted = true;
-        guide.SetStepActionFeedback("Three sample-duplicate columns contacted");
+        guide.SetStepActionFeedback("Matching duplicate columns for all Master Mix sample columns contacted");
         guide.CompleteCurrentAction();
         guide.AdvanceGuideStep();
     }
@@ -171,11 +253,20 @@ public sealed class PippetteController : MonoBehaviour
 
     private void TryCompleteSamplesStage()
     {
-        if (!IsSamplesStageActive() || !dnaTubeContacted || stageFiveSampleColumns.Count < requiredStageFiveSampleColumns) return;
+        if (!IsSamplesStageActive() ||
+            contactedSampleColumns.Count < requiredStageFiveSampleColumns ||
+            !stageFiveSampleColumns.IsSupersetOf(contactedSampleColumns)) return;
         samplesStageCompleted = true;
-        guide.SetStepActionFeedback("DNA tube and sample column contacts complete");
+        guide.SetStepActionFeedback("DNA Tube contacted for all Master Mix sample columns");
         guide.CompleteCurrentAction();
         guide.AdvanceGuideStep();
+    }
+
+    private bool HasEverySelectedDuplicateColumn()
+    {
+        foreach (string sampleColumn in contactedSampleColumns)
+            if (!contactedDuplicateColumns.Contains(sampleColumn + "-D")) return false;
+        return true;
     }
 
     private bool IsControlsStageActive()
@@ -200,14 +291,55 @@ public sealed class PippetteController : MonoBehaviour
 
     private void TryCompleteMasterMixStage()
     {
-        if (!IsMasterMixStageActive() || !masterMixContacted ||
+        if (!IsMasterMixStageActive() ||
             contactedSampleColumns.Count < requiredSampleColumns)
             return;
 
         stageCompleted = true;
-        guide.SetStepActionFeedback("Master mix and sample column contacts complete");
+        guide.SetStepActionFeedback("Three distinct sample columns completed through repeated Master Mix contacts");
         guide.CompleteCurrentAction();
         guide.AdvanceGuideStep();
+    }
+
+    private bool IsNearestOverlappingColumn(Transform contactedColumn)
+    {
+        var pipetteCollider = GetComponent<Collider>();
+        if (plateRoot == null || contactedColumn == null || pipetteCollider == null) return true;
+
+        var tipBounds = pipetteCollider.bounds;
+        var contactedBox = GetColumnGroupCollider(contactedColumn);
+        if (contactedBox == null || !contactedBox.bounds.Intersects(tipBounds)) return true;
+
+        Transform nearestColumn = null;
+        float nearestSurfaceDistance = float.PositiveInfinity;
+        float nearestCenterDistance = float.PositiveInfinity;
+        for (int i = 0; i < plateRoot.childCount; i++)
+        {
+            var candidate = plateRoot.GetChild(i);
+            var candidateBox = GetColumnGroupCollider(candidate);
+            if (candidateBox == null || !candidateBox.enabled || !candidateBox.gameObject.activeInHierarchy ||
+                !candidateBox.bounds.Intersects(tipBounds))
+                continue;
+
+            Vector3 closestPoint = candidateBox.bounds.ClosestPoint(tipBounds.center);
+            float surfaceDistance = (closestPoint - tipBounds.center).sqrMagnitude;
+            float centerDistance = (candidateBox.bounds.center - tipBounds.center).sqrMagnitude;
+            bool isCloser = surfaceDistance < nearestSurfaceDistance ||
+                (Mathf.Approximately(surfaceDistance, nearestSurfaceDistance) && centerDistance < nearestCenterDistance);
+            if (!isCloser) continue;
+
+            nearestSurfaceDistance = surfaceDistance;
+            nearestCenterDistance = centerDistance;
+            nearestColumn = candidate;
+        }
+
+        return nearestColumn == null || nearestColumn == contactedColumn;
+    }
+
+    private static BoxCollider GetColumnGroupCollider(Transform column)
+    {
+        var colliderTransform = column != null ? column.Find("Collider") : null;
+        return colliderTransform != null ? colliderTransform.GetComponent<BoxCollider>() : null;
     }
 
     private Transform ResolveColumn(Collider other)

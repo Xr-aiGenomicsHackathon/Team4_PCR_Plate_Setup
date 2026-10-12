@@ -13,6 +13,14 @@ public sealed class PCRGuideWorldPanelButtonBridge : MonoBehaviour
     private void BindButtons()
     {
         if (bound) return;
+        // PCRGuideWorldPanelControls owns the dynamically generated hit buttons
+        // on this panel. Let it route those clicks once instead of adding a
+        // second listener to the same buttons here.
+        if (GetComponent<PCRGuideWorldPanelControls>() != null)
+        {
+            bound = true;
+            return;
+        }
         if (guide == null) guide = FindFirstObjectByType<PCRGuideUIController>();
         if (guide == null) return;
 

@@ -22,32 +22,32 @@ public sealed class PCRGuideUIController : MonoBehaviour
     };
     private static readonly string[] Summaries = {
         "This is our PCR plate. It has 96 tiny wells. Each well has a job.",
-        "Practice the plate coordinates first: follow the prompts to locate wells A1 through D6. Apply the confirmed control and sample allocation after this coordinate check.",
-        "Touch the prepared master mix tray with the pipette, then contact at least two different sample columns.",
+        "Practice the plate coordinates first: follow the prompts to locate the wells. Apply the confirmed control and sample allocation after this coordinate check.",
+        "Repeat at least three times: contact Master Mix, then one different sample column. Recontact Master Mix before the next column.",
         "Touch both the PTC and NTC columns with the pipette.",
-        "Touch any DNA tube with the pipette, then contact at least three different sample columns.",
-        "Use the pipette to contact at least three different sample-duplicate columns marked with “-D” in the template.",
+        "For each of the three sample columns completed with Master Mix, contact the DNA Tube, then that same column.",
+        "For each Master Mix sample column, contact the DNA Tube, then its matching duplicate column marked with “-D”.",
         "Review the well, sample, volume and control assignments before the plate is sealed.",
         "Lower the sealing film evenly across the plate, then prepare it for handoff to Team 5."
     };
     private static readonly string[] Tasks = {
-        "Hover over three columns", "Locate wells A1–D6", "Touch master mix and two sample columns", "Contact PTC and NTC",
-        "Contact DNA tube and 3 sample columns", "Contact 3 sample-duplicate columns", "Run the final checklist", "Seal and hand off"
+        "Hover over three columns", "Locate wells A1–D6", "Complete at least 3 Master Mix-to-sample cycles", "Contact PTC and NTC",
+        "Transfer DNA to the same 3 sample columns", "Transfer DNA to their 3 matching duplicate columns", "Run the final checklist", "Seal and hand off"
     };
     private static readonly string[] Instructions = {
         "Hover over any three different labeled columns with the ray. Each visited column stays highlighted; after the third, continue to the next stage.",
         "Follow the prompts and use the XR ray to select wells A1 through D6 in row order. Each correct well is marked green.",
-        "Touch the prepared master mix tray with the pipette, then touch at least two different sample columns. The cones in each contacted column will rise.",
+        "For each of at least three different sample columns, contact Master Mix first, then touch one column. Contact Master Mix again before the next column.",
         "Contact the PTC column and the NTC column with the pipette. Both columns must be touched to complete this stage.",
-        "Touch any DNA tube with the pipette, then touch at least three different sample columns. Each contacted column's cones will rise.",
-        "Contact at least three different sample-duplicate columns marked with “-D” in the template using the pipette.",
+        "For each sample column completed with Master Mix, contact the DNA Tube first, then touch that same column. Repeat for all three columns.",
+        "For each sample column completed with Master Mix, contact the DNA Tube first, then touch its matching “-D” duplicate. Repeat for all three columns.",
         "Confirm every checklist item below against the plate before sealing it.",
         "Position the sealing film, smooth it across the plate and confirm the plate is ready for handoff."
     };
     private static readonly string[] NarrationText = {
         "“This is our PCR plate. It has 96 tiny wells. Each well has a job.”",
         "“Before we add anything, we make a map. This tells us where the controls and samples belong.”",
-        "“First, we add 20 microlitres of prepared master mix to the required reaction wells.”",
+        "“First, we add 15 microlitres of prepared master mix to the required reaction wells.”",
         "“Next, we add our controls. Controls help us check that the PCR experiment is working properly.”",
         "“Now we add 5 microlitres of each sample to its assigned well.”",
         "“Some samples are checked in duplicate wells so we can compare the reactions.”",
