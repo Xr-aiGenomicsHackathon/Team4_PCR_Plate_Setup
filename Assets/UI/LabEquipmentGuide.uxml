@@ -1,0 +1,26 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+    <Style src="LabEquipmentGuide.uss" />
+    <ui:VisualElement name="equipment-screen" class="equipment-screen">
+        <ui:VisualElement class="header"><ui:Label text="Equipment Used" class="header-title" /></ui:VisualElement>
+        <ui:VisualElement name="learning-view" class="learning-view">
+            <ui:VisualElement class="image-row">
+                <ui:Button name="previous-equipment" text="❮" tooltip="Previous equipment" class="arrow" />
+                <ui:Image name="equipment-image" class="equipment-image" />
+                <ui:Button name="next-equipment" text="❯" tooltip="Next equipment" class="arrow" />
+            </ui:VisualElement>
+            <ui:Label name="equipment-function" text="Explore each piece of equipment and learn what it does." class="function" />
+            <ui:VisualElement class="name-bar"><ui:Label name="equipment-title" text="Pipette" class="equipment-name" /></ui:VisualElement>
+            <ui:Label name="slide-position" text="1 / 5" class="page-count" />
+        </ui:VisualElement>
+        <ui:VisualElement name="completion-view" class="completion-view hidden">
+            <ui:Label text="Learning complete" class="completion-title" />
+            <ui:Label text="You have explored the equipment and its functions." class="completion-copy" />
+            <ui:Label text="Review the equipment again or continue to PCR plate setup." class="completion-copy" />
+            <ui:VisualElement class="completion-actions">
+                <ui:Button name="retake-learning" text="Retake learning" class="action secondary" />
+                <ui:Button name="proceed-next-step" text="Proceed to next step" class="action primary" />
+            </ui:VisualElement>
+            <ui:Label name="navigation-status" class="navigation-status" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>
