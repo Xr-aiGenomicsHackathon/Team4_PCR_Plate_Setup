@@ -12,7 +12,7 @@
         </ui:VisualElement>
         <ui:VisualElement class="main-content" style="flex-direction: row; align-self: auto;">
             <ui:VisualElement class="intro-column">
-                <ui:Label text="Team 4&#10;PCR Plate Setup&#10;" class="hero-title" />
+                <ui:Label text="Team 4 Virtual Molecular Laboratory&#10;" class="hero-title" style="-unity-text-align: middle-left;" />
                 <ui:Label text="Enter the lab to have a work through of your PCR plate setup." class="hero-copy" />
                 <ui:VisualElement class="info-row" />
                 <ui:Button name="start-session" text="START EXPERIENCE     →" class="start-button" />

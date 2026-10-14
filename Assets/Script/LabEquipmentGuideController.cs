@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -15,11 +16,17 @@ public sealed class LabEquipmentGuideController : MonoBehaviour
         public string title, category;
         [TextArea] public string function, useInPhase, reminder;
         public Texture2D image;
+        [Tooltip("Function narration played automatically when this equipment slide appears.")]
+        public AudioClip voiceOver;
     }
     [SerializeField] private UIDocument document;
     [SerializeField] private RectTransform hitTargetRoot;
     [SerializeField] private EquipmentSlide[] slides;
     [SerializeField] private string nextScene = "Assets/Scenes/StarterScene.unity";
+    [SerializeField] private AudioSource narrationSource;
+    private int narratedSlideIndex = -1;
+    private Coroutine narrationRoutine;
+    private bool narrationInProgress;
     private VisualElement root;
     private Button boundNext;
     private int currentIndex;
@@ -68,6 +75,7 @@ public sealed class LabEquipmentGuideController : MonoBehaviour
     }
     public void UnbindView()
     {
+        StopNarration();
         foreach (var pair in callbacks) pair.Key.clicked -= pair.Value;
         callbacks.Clear();
         if (root != null) root.UnregisterCallback<KeyDownEvent>(OnKeyDown);
@@ -81,10 +89,10 @@ public sealed class LabEquipmentGuideController : MonoBehaviour
         else if (evt.keyCode == KeyCode.RightArrow) { Next(); evt.StopPropagation(); }
     }
     public void Previous()
-    { if (!complete && !loading && currentIndex > 0) { currentIndex--; Refresh(); } }
+    { if (!complete && !loading && !narrationInProgress && currentIndex > 0) { currentIndex--; Refresh(); } }
     public void Next()
     {
-        if (loading || complete || SlideCount == 0) return;
+        if (loading || complete || narrationInProgress || SlideCount == 0) return;
         if (currentIndex < SlideCount - 1) currentIndex++;
         else complete = true;
         Refresh();
@@ -92,7 +100,8 @@ public sealed class LabEquipmentGuideController : MonoBehaviour
     }
     public void Retake()
     {
-        if (loading) return;
+        if (loading || narrationInProgress) return;
+        StopNarration();
         currentIndex = 0; complete = false; Refresh();
         root?.Q<Button>("next-equipment")?.Focus();
     }
@@ -130,8 +139,73 @@ public sealed class LabEquipmentGuideController : MonoBehaviour
         root.Q<Button>("next-equipment").tooltip = currentIndex == SlideCount - 1 ? "Finish learning" : "Next equipment";
         root.Q<Button>("retake-learning").SetEnabled(!loading);
         root.Q<Button>("proceed-next-step").SetEnabled(!loading);
-        SetStatus(""); RefreshTargets();
+        SetStatus("");
+        PlayCurrentNarration();
+        RefreshNarrationControls();
     }
+    private void PlayCurrentNarration()
+    {
+        // Editor previews should not start audio, and ordinary refreshes should not replay it.
+        if (!Application.isPlaying) return;
+        if (complete || loading || SlideCount == 0)
+        { StopNarration(); return; }
+        if (narratedSlideIndex == currentIndex) return;
+        StopNarration();
+        narratedSlideIndex = currentIndex;
+        var clip = slides[currentIndex].voiceOver;
+        if (clip == null) return;
+        if (narrationSource == null) narrationSource = gameObject.AddComponent<AudioSource>();
+        narrationSource.playOnAwake = false;
+        narrationSource.loop = false;
+        narrationSource.spatialBlend = 0f;
+        narrationSource.pitch = 1f;
+        narrationSource.clip = clip;
+        narrationInProgress = true;
+        narrationRoutine = StartCoroutine(PlayNarrationToEnd(clip));
+    }
+
+    private IEnumerator PlayNarrationToEnd(AudioClip clip)
+    {
+        if (clip.loadState == AudioDataLoadState.Unloaded) clip.LoadAudioData();
+        while (clip.loadState == AudioDataLoadState.Loading) yield return null;
+        if (clip.loadState == AudioDataLoadState.Failed)
+            Debug.LogError("Could not load equipment narration: " + clip.name, this);
+        else
+        {
+            narrationSource.Play();
+            yield return null;
+            while (narrationSource.isPlaying || AudioListener.pause) yield return null;
+        }
+        narrationInProgress = false;
+        narrationRoutine = null;
+        RefreshNarrationControls();
+    }
+
+    private void RefreshNarrationControls()
+    {
+        if (root == null) return;
+        root.Q<Button>("previous-equipment")?.SetEnabled(currentIndex > 0 && !loading && !narrationInProgress);
+        root.Q<Button>("next-equipment")?.SetEnabled(!loading && !narrationInProgress);
+        if (!complete)
+            root.Q<Button>("next-equipment").tooltip = narrationInProgress
+                ? "Listen to the full narration before continuing"
+                : currentIndex == SlideCount - 1 ? "Finish learning" : "Next equipment";
+        RefreshTargets();
+    }
+
+    private void StopNarration()
+    {
+        if (narrationRoutine != null) StopCoroutine(narrationRoutine);
+        narrationRoutine = null;
+        narrationInProgress = false;
+        if (narrationSource != null)
+        {
+            narrationSource.Stop();
+            narrationSource.clip = null;
+        }
+        narratedSlideIndex = -1;
+    }
+
     private void HideTargets()
     { foreach (var target in targets.Values) if (target != null) target.gameObject.SetActive(false); }
     private void RefreshTargets()

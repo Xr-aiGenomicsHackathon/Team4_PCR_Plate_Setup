@@ -33,6 +33,7 @@ public sealed class VRExperienceDoor : MonoBehaviour
     [SerializeField] private GameObject equipmentWorldPanel;
     [SerializeField] private Animator doorAnimator;
     [SerializeField] private AnimationClip doorOpenClip;
+    [SerializeField] private AnimationClip doorCloseClip;
     [SerializeField] private XROrigin playerOrigin;
     [SerializeField] private Transform equipmentArrival;
     [SerializeField] private Behaviour[] locomotionProviders;
@@ -83,6 +84,12 @@ public sealed class VRExperienceDoor : MonoBehaviour
             if (hitRootObject != null) hitTargetRoot = hitRootObject.GetComponent<RectTransform>();
         }
         if (previewCamera == null) CreatePreviewCamera();
+        if (doorAnimator != null && doorAnimator.HasState(0, Animator.StringToHash("DoorClosed")))
+        {
+            doorAnimator.updateMode = AnimatorUpdateMode.UnscaledTime;
+            doorAnimator.Play("DoorClosed", 0, 0f);
+            doorAnimator.Update(0f);
+        }
     }
 
     private void Start()
@@ -278,10 +285,16 @@ public sealed class VRExperienceDoor : MonoBehaviour
     private void StartExperience()
     {
         if (started || !introComplete) return;
-        if (doorAnimator == null || doorOpenClip == null || playerOrigin == null || equipmentArrival == null)
+        if (doorAnimator == null || doorOpenClip == null || doorCloseClip == null || playerOrigin == null || equipmentArrival == null)
         {
             if (introStatus != null) introStatus.text = "Entry setup is incomplete. Check the scene references.";
             Debug.LogError("Entry sequence needs the door animation, XR Origin, and equipment arrival marker.", this);
+            return;
+        }
+        if (!doorAnimator.HasState(0, Animator.StringToHash("DoorOpen")) ||
+            !doorAnimator.HasState(0, Animator.StringToHash("DoorClosing")))
+        {
+            Debug.LogError("The entry door needs the LabEntryDoor Animator controller.", this);
             return;
         }
         started = true;
@@ -336,6 +349,14 @@ public sealed class VRExperienceDoor : MonoBehaviour
         arrival.y += head.position.y - playerOrigin.transform.position.y;
         playerOrigin.MoveCameraToWorldLocation(arrival);
         if (characterEnabled) character.enabled = true;
+
+        // Close only after the XR player has arrived safely inside.
+        doorAnimator.Play("DoorClosing", 0, 0f);
+        yield return null;
+        while (doorAnimator.GetCurrentAnimatorStateInfo(0).IsName("DoorClosing") &&
+               doorAnimator.GetCurrentAnimatorStateInfo(0).normalizedTime < 1f)
+            yield return null;
+        doorAnimator.Play("DoorClosed", 0, 0f);
 
         if (equipmentWorldPanel != null) equipmentWorldPanel.SetActive(true);
         if (experienceGuide != null) experienceGuide.enabled = true;
