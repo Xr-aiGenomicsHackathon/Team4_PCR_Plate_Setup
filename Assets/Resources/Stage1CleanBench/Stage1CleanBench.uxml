@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+<Style src="project://database/Assets/Resources/Stage1CleanBench/Stage1CleanBench.uss?fileID=7433441132597879392&amp;guid=e0dee8f119cb7f27e8bb3c9a4544ceba&amp;type=3#Stage1CleanBench" />
+<ui:VisualElement class="screen"><ui:VisualElement class="panel">
+<ui:VisualElement class="topline"><ui:VisualElement class="brand-mark"><ui:Label text="PCR"/></ui:VisualElement><ui:VisualElement class="heading-copy"><ui:Label text="CLEAN BENCH SETUP" class="eyebrow"/><ui:Label text="Prepare your workstation" class="title"/></ui:VisualElement><ui:VisualElement class="spacer"/><ui:VisualElement class="stage-pill"><ui:Label text="STAGE 01"/></ui:VisualElement></ui:VisualElement>
+<ui:Label text="Set up a clean, organized space before starting the practical." class="summary"/>
+<ui:VisualElement class="progress-row"><ui:Label text="YOUR CHECKLIST" class="section-label"/><ui:Label name="stage-state" text="IN PROGRESS" class="state-pill"/></ui:VisualElement>
+<ui:VisualElement class="checklist">
+<ui:VisualElement class="item-row"><ui:VisualElement class="item-icon"><ui:Label text="01"/></ui:VisualElement><ui:VisualElement class="item-copy"><ui:Label text="PPE" class="item-tag"/><ui:Label name="coat-status" text="○   Wear laboratory coat" class="item-title"/></ui:VisualElement></ui:VisualElement>
+<ui:VisualElement class="item-row"><ui:VisualElement class="item-icon"><ui:Label text="02"/></ui:VisualElement><ui:VisualElement class="item-copy"><ui:Label text="PPE" class="item-tag"/><ui:Label name="glove-status" text="○   Put on protective gloves" class="item-title"/></ui:VisualElement></ui:VisualElement>
+<ui:VisualElement class="item-row"><ui:VisualElement class="item-icon"><ui:Label text="03"/></ui:VisualElement><ui:VisualElement class="item-copy"><ui:Label text="SURFACE" class="item-tag"/><ui:Label name="cleaning-status" text="○   Clean the work area" class="item-title"/></ui:VisualElement></ui:VisualElement>
+</ui:VisualElement>
+<ui:VisualElement class="feedback-card"><ui:VisualElement class="feedback-dot"/><ui:VisualElement class="feedback-copy"><ui:Label name="feedback-title" text="Ready when you are" class="feedback-title"/><ui:Label name="feedback-detail" text="Pick up each placeholder and complete the task at the bench." class="feedback-detail"/></ui:VisualElement></ui:VisualElement>
+<ui:VisualElement class="footer"><ui:Label name="score-label" text="SCORING  RUBRIC PENDING" class="score-label"/><ui:VisualElement class="spacer"/><ui:Button name="next-stage" text="Next stage  →" class="next"/></ui:VisualElement>
+</ui:VisualElement></ui:VisualElement></ui:UXML>
