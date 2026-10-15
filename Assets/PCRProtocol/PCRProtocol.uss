@@ -46,3 +46,7 @@
 
 .map-grid { flex-shrink:0; }
 .well { height:130px; padding:12px 10px; }
+
+.well-coordinate { height:25px; margin:0; flex-shrink:0; -unity-text-align:middle-center; }
+.well-id { height:40px; margin:0; flex-shrink:0; -unity-text-align:middle-center; }
+.well-volume { height:25px; margin:4px 0 0; flex-shrink:0; -unity-text-align:middle-center; }
