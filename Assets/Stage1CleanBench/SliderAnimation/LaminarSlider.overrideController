@@ -1,0 +1,15 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!221 &22100000
+AnimatorOverrideController:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: LaminarSlider
+  m_Controller: {fileID: 9100000, guid: bbe214a9170db4c9798fc2c99fa6dc7c, type: 2}
+  m_Clips:
+  - m_OriginalClip: {fileID: 7400000, guid: caca042ae2e9818dab66bb24ff49d2f4, type: 2}
+    m_OverrideClip: {fileID: 7400000, guid: 70d57d76ad19e42969e7ea0d6f4f738e, type: 2}
+  - m_OriginalClip: {fileID: 7400000, guid: e7cf34744f1612739a900111b7b0a4bb, type: 2}
+    m_OverrideClip: {fileID: 7400000, guid: e9d509965242b40f5834330d1f17db49, type: 2}

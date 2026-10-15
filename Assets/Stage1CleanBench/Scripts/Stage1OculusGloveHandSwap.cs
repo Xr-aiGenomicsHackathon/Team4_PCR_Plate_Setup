@@ -7,6 +7,8 @@ using UnityEngine.XR.Interaction.Toolkit.Interactables;
 public sealed class Stage1OculusGloveHandSwap : MonoBehaviour
 {
     [SerializeField] private XRGrabInteractable gloves;
+    [SerializeField] private XRGrabInteractable[] additionalGloves = new XRGrabInteractable[0];
+    private readonly System.Collections.Generic.HashSet<XRGrabInteractable> subscribedGloves = new System.Collections.Generic.HashSet<XRGrabInteractable>();
     [SerializeField] private Transform leftController;
     [SerializeField] private Transform rightController;
     [SerializeField] private GameObject leftControllerVisual;
@@ -51,16 +53,24 @@ public sealed class Stage1OculusGloveHandSwap : MonoBehaviour
         PrepareAnimator(leftHandAnimator);
         PrepareAnimator(rightHandAnimator);
 
-        if (gloves != null)
-            gloves.selectEntered.AddListener(OnGlovesGrabbed);
-        else
-            Debug.LogWarning("Stage 1 glove hand swap could not find PLACEHOLDER_ProtectiveGloves.");
+        SubscribeGlove(gloves);
+        foreach (var glove in additionalGloves)
+            SubscribeGlove(glove);
+        if (subscribedGloves.Count == 0)
+            Debug.LogWarning("Stage 1 glove hand swap has no glove interactables assigned.");
     }
 
     private void OnDestroy()
     {
-        if (gloves != null)
-            gloves.selectEntered.RemoveListener(OnGlovesGrabbed);
+        foreach (var glove in subscribedGloves)
+            if (glove != null) glove.selectEntered.RemoveListener(OnGlovesGrabbed);
+        subscribedGloves.Clear();
+    }
+
+    private void SubscribeGlove(XRGrabInteractable glove)
+    {
+        if (glove != null && subscribedGloves.Add(glove))
+            glove.selectEntered.AddListener(OnGlovesGrabbed);
     }
 
     private void Update()

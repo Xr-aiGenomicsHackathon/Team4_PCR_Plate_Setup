@@ -30,6 +30,11 @@ public sealed class PCRGuideWorldPanelControls : MonoBehaviour
 
     private void RefreshHitTargets(VisualElement root)
     {
+        foreach (var identity in new[] { "S1", "S2", "S3", "S4", "S5", "PTC", "NTC" })
+        {
+            var value = identity;
+            AddOrUpdate(root, "layout-" + value, () => guide.SelectLayoutIdentity(value));
+        }
         AddOrUpdate(root, "step-1", () => guide.ShowStep(1));
         AddOrUpdate(root, "step-2", () => guide.ShowStep(2));
         AddOrUpdate(root, "step-3", () => guide.ShowStep(3));
