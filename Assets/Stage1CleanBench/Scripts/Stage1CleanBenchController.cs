@@ -8,9 +8,12 @@ using UnityEngine.XR.Interaction.Toolkit.UI;
 public sealed class Stage1CleanBenchController : MonoBehaviour
 {
 [SerializeField] private XRGrabInteractable labCoat, protectiveGloves, cleaningSpray, cleaningWipe;
-[SerializeField] private Collider cleaningWorkArea;
+[SerializeField] private Stage1CleaningReadiness cleaningReadiness;
+[SerializeField] private PCRGuideUIController plateLayoutGuide;
+[SerializeField] private GameObject plateLayoutUIRoot;
+[SerializeField] private GameObject plateLayoutWorldPanel;
 [SerializeField] private int coatPoints, glovePoints, cleaningPoints;
-private bool coatDone, glovesDone, sprayUsedInZone, wipeUsedInZone, cleaningDone;
+private bool coatDone, glovesDone, cleaningDone;
 private Label coatStatus, gloveStatus, cleaningStatus, feedbackTitle, feedbackDetail, scoreLabel, stageState;
 private UnityEngine.UIElements.Button nextButton;
 private UnityEngine.UI.Button nextProxy;
@@ -19,19 +22,20 @@ private RenderTexture panelTexture;
 private PanelSettings runtimePanelSettings;
 private void Awake()
 {
-labCoat=FindGrab("PLACEHOLDER_LabCoat"); protectiveGloves=FindGrab("PLACEHOLDER_ProtectiveGloves");
-cleaningSpray=FindGrab("CleaningSpray_ExistingVisual"); cleaningWipe=FindGrab("PLACEHOLDER_CleaningWipe");
-cleaningWorkArea=FindCollider("ZONE_CleaningWorkArea");
-Subscribe(labCoat); Subscribe(protectiveGloves); Subscribe(cleaningSpray); Subscribe(cleaningWipe);
+if (!labCoat) labCoat=FindGrab("PLACEHOLDER_LabCoat"); if (!protectiveGloves) protectiveGloves=FindGrab("PLACEHOLDER_ProtectiveGloves");
+if (!cleaningSpray) cleaningSpray=FindGrab("CleaningSpray_ExistingVisual"); if (!cleaningWipe) cleaningWipe=FindGrab("PLACEHOLDER_CleaningWipe");
+if (!cleaningReadiness) cleaningReadiness=GetComponent<Stage1CleaningReadiness>();
+if (cleaningReadiness) cleaningReadiness.Completed += OnCleaningReady;
+Subscribe(labCoat); Subscribe(protectiveGloves);
 CreateToolkitWorldPanel(); RefreshChecklist();
 }
 private void OnDestroy()
 {
-Unsubscribe(labCoat); Unsubscribe(protectiveGloves); Unsubscribe(cleaningSpray); Unsubscribe(cleaningWipe);
+Unsubscribe(labCoat); Unsubscribe(protectiveGloves);
+if (cleaningReadiness) cleaningReadiness.Completed -= OnCleaningReady;
 if(panelTexture!=null) panelTexture.Release(); if(runtimePanelSettings!=null) Destroy(runtimePanelSettings);
 }
 private XRGrabInteractable FindGrab(string n){var g=GameObject.Find(n);return g?g.GetComponent<XRGrabInteractable>():null;}
-private Collider FindCollider(string n){var g=GameObject.Find(n);return g?g.GetComponent<Collider>():null;}
 private void Subscribe(XRGrabInteractable i){if(i!=null)i.selectExited.AddListener(OnItemReleased);}
 private void Unsubscribe(XRGrabInteractable i){if(i!=null)i.selectExited.RemoveListener(OnItemReleased);}
 private void OnItemReleased(SelectExitEventArgs args)
@@ -39,8 +43,6 @@ private void OnItemReleased(SelectExitEventArgs args)
 var go=args.interactableObject.transform.gameObject;
 if(labCoat&&go==labCoat.gameObject&&!coatDone) StartCoroutine(WearItem(go,true));
 else if(protectiveGloves&&go==protectiveGloves.gameObject&&!glovesDone) StartCoroutine(WearItem(go,false));
-else if(cleaningSpray&&go==cleaningSpray.gameObject){sprayUsedInZone=IsInside(cleaningWorkArea,go.transform.position);if(sprayUsedInZone)TryCompleteCleaning();else SetFeedback("Place the cleaning spray at the workstation.","Carry the spray into the marked workstation area and release it there.",true);}
-else if(cleaningWipe&&go==cleaningWipe.gameObject){wipeUsedInZone=IsInside(cleaningWorkArea,go.transform.position);if(wipeUsedInZone)TryCompleteCleaning();else SetFeedback("Place the cleaning wipe at the workstation.","Carry the wipe into the marked workstation area and release it there.",true);}
 
 RefreshChecklist();
 }
@@ -56,11 +58,13 @@ if(isCoat&&!coatDone){coatDone=true;AddScore(coatPoints);SetFeedback("Laboratory
 if(!isCoat&&!glovesDone){glovesDone=true;AddScore(glovePoints);SetFeedback("Protective gloves equipped.","You are ready to continue preparing the bench.",false);}
 RefreshChecklist();
 }
-private void TryCompleteCleaning()
+private void OnCleaningReady()
 {
-if(sprayUsedInZone&&wipeUsedInZone&&cleaningSpray&&cleaningWipe&&IsInside(cleaningWorkArea,cleaningSpray.transform.position)&&IsInside(cleaningWorkArea,cleaningWipe.transform.position)&&!cleaningDone){cleaningDone=true;AddScore(cleaningPoints);SetFeedback("Cleaning items placed at workstation.","The spray and wipe are both inside the marked workstation area.",false);}
+if (cleaningDone) return;
+cleaningDone=true; AddScore(cleaningPoints);
+SetFeedback("Cleaning setup validated.","LaminarSlide is open; cleaner and spray are held in opposite hands.",false);
+RefreshChecklist();
 }
-private bool IsInside(Collider area,Vector3 point){return area&&area.bounds.Contains(point);}
 private void AddScore(int points){if(points>0)score+=points;}
 private void SetFeedback(string title,string detail,bool warning)
 {
@@ -72,7 +76,7 @@ private void RefreshChecklist()
 {
 bool complete=coatDone&&glovesDone&&cleaningDone;
 SetItem(coatStatus,coatDone,"PPE","Wear laboratory coat");SetItem(gloveStatus,glovesDone,"PPE","Put on protective gloves");
-SetItem(cleaningStatus,cleaningDone,"SURFACE","Place spray and wipe at workstation");
+SetItem(cleaningStatus,cleaningDone,"SURFACE","Open slide; hold cleaner and spray");
 if(scoreLabel!=null)scoreLabel.text=coatPoints+glovePoints+cleaningPoints>0?"SCORE  "+score:"SCORING  RUBRIC PENDING";
 if(stageState!=null)stageState.text=complete?"READY TO CONTINUE":"IN PROGRESS";if(nextButton!=null)nextButton.SetEnabled(complete);if(nextProxy!=null)nextProxy.interactable=complete;
 if(complete)SetFeedback("Stage 1 complete.","Your workstation is prepared and Stage 2 is unlocked.",false);
@@ -82,7 +86,22 @@ private void SetItem(Label label,bool done,string tag,string title)
 if(label==null)return;label.text=(done?"✓   ":"○   ")+title;label.parent.parent.EnableInClassList("done",done);
 var eyebrow=label.parent.Q<Label>(className:"item-tag");if(eyebrow!=null)eyebrow.text=tag;
 }
-private void OnNextStageClicked(){SetFeedback("Stage 2 is unlocked.","Add the verified Stage 2 scene transition when that stage is implemented.",false);}
+private void OnNextStageClicked()
+{
+if (!coatDone || !glovesDone || !cleaningDone) return;
+if (!plateLayoutGuide || !plateLayoutUIRoot || !plateLayoutWorldPanel)
+{ SetFeedback("Stage 2 configuration missing.","Assign the existing plate-layout guide and world panel.",true); return; }
+var panel=transform.Find("Stage1_CleanBench_WorldPanel");
+if (!panel)
+{ SetFeedback("Current panel is missing.","The next step needs the current panel position.",true); return; }
+// Inherit the outgoing panel's live world pose before showing the next step.
+// Keep the incoming panel's authored scale and layout.
+plateLayoutWorldPanel.transform.SetPositionAndRotation(panel.position,panel.rotation);
+plateLayoutUIRoot.SetActive(true);
+plateLayoutWorldPanel.SetActive(true);
+plateLayoutGuide.BeginPlateLayout();
+panel.gameObject.SetActive(false);
+}
 private void CreateToolkitWorldPanel()
 {
 var visualTree=Resources.Load<VisualTreeAsset>("Stage1CleanBench/Stage1CleanBench");var styleSheet=Resources.Load<StyleSheet>("Stage1CleanBench/Stage1CleanBench");
@@ -104,6 +123,29 @@ var surfaceTransform=panelObject.transform.Find("UI Toolkit Surface");var surfac
 var surfaceRect=surface.GetComponent<RectTransform>();surfaceRect.anchorMin=Vector2.zero;surfaceRect.anchorMax=Vector2.one;surfaceRect.offsetMin=Vector2.zero;surfaceRect.offsetMax=Vector2.zero;
 var raw=surface.GetComponent<RawImage>();raw.texture=panelTexture;raw.raycastTarget=false;raw.uvRect=new Rect(1,0,-1,1);
 var proxyTransform=panelObject.transform.Find("Next Stage XR Hit Target");if(proxyTransform==null){var proxyObject=new GameObject("Next Stage XR Hit Target",typeof(RectTransform),typeof(CanvasRenderer),typeof(UnityEngine.UI.Image),typeof(UnityEngine.UI.Button));proxyObject.transform.SetParent(panelObject.transform,false);proxyTransform=proxyObject.transform;}
-var proxyRect=proxyTransform.GetComponent<RectTransform>();proxyRect.anchorMin=Vector2.one;proxyRect.anchorMax=Vector2.one;proxyRect.pivot=Vector2.one;proxyRect.anchoredPosition=new Vector2(-55,-38);proxyRect.sizeDelta=new Vector2(220,68);var proxyImage=proxyTransform.GetComponent<UnityEngine.UI.Image>();proxyImage.color=new Color(1,1,1,.001f);proxyImage.raycastTarget=true;nextProxy=proxyTransform.GetComponent<UnityEngine.UI.Button>();if(nextProxy!=null)nextProxy.onClick.AddListener(OnNextStageClicked);
+nextSurface=raw;
+proxyTransform.SetParent(surface.transform,false);
+var proxyRect=proxyTransform.GetComponent<RectTransform>();proxyRect.pivot=new Vector2(.5f,.5f);proxyRect.anchorMin=Vector2.zero;proxyRect.anchorMax=Vector2.zero;proxyRect.sizeDelta=Vector2.zero;
+var proxyImage=proxyTransform.GetComponent<UnityEngine.UI.Image>();proxyImage.color=new Color(1,1,1,.001f);proxyImage.raycastTarget=true;nextProxy=proxyTransform.GetComponent<UnityEngine.UI.Button>();if(nextProxy!=null)nextProxy.onClick.AddListener(OnNextStageClicked);
+}
+private RawImage nextSurface;
+private void LateUpdate()
+{
+    if (nextProxy == null || nextSurface == null || nextButton == null || nextButton.panel == null) return;
+    // Map the rendered UI Toolkit button through the RawImage UVs, including mirroring.
+    Rect viewport = nextButton.panel.visualTree.worldBound;
+    Rect button = nextButton.worldBound;
+    Rect uv = nextSurface.uvRect;
+    if (viewport.width <= 0 || viewport.height <= 0 || button.width <= 0 || button.height <= 0 ||
+        float.IsNaN(button.x) || float.IsNaN(button.y) || Mathf.Approximately(uv.width,0) || Mathf.Approximately(uv.height,0)) return;
+    float x0 = ((button.xMin-viewport.xMin)/viewport.width-uv.x)/uv.width;
+    float x1 = ((button.xMax-viewport.xMin)/viewport.width-uv.x)/uv.width;
+    float y0 = (1f-(button.yMax-viewport.yMin)/viewport.height-uv.y)/uv.height;
+    float y1 = (1f-(button.yMin-viewport.yMin)/viewport.height-uv.y)/uv.height;
+    var rect = (RectTransform)nextProxy.transform;
+    rect.anchorMin = new Vector2(Mathf.Min(x0,x1),Mathf.Min(y0,y1));
+    rect.anchorMax = new Vector2(Mathf.Max(x0,x1),Mathf.Max(y0,y1));
+    rect.offsetMin = Vector2.zero;
+    rect.offsetMax = Vector2.zero;
 }
 }
