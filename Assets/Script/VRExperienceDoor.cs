@@ -30,6 +30,7 @@ public sealed class VRExperienceDoor : MonoBehaviour
     [Header("Introduction and entry sequence")]
     [SerializeField] private AudioSource introSource;
     [SerializeField] private AudioClip introAudio;
+    [SerializeField, Range(0f, 1f)] private float narrationVolume = 0.65f;
     [SerializeField] private GameObject equipmentWorldPanel;
     [SerializeField] private Animator doorAnimator;
     [SerializeField] private AnimationClip doorOpenClip;
@@ -243,6 +244,13 @@ public sealed class VRExperienceDoor : MonoBehaviour
         introSource.loop = false;
         introSource.spatialBlend = 0f;
         introSource.pitch = 1f;
+        introSource.volume = narrationVolume;
+        introSource.dopplerLevel = 0f;
+        introSource.reverbZoneMix = 0f;
+        var speechFilter = introSource.GetComponent<AudioHighPassFilter>();
+        if (speechFilter == null) speechFilter = introSource.gameObject.AddComponent<AudioHighPassFilter>();
+        speechFilter.cutoffFrequency = 120f;
+        speechFilter.highpassResonanceQ = 1f;
         introSource.clip = introAudio;
         introStatus.text = "Listen to the introduction…";
         if (introAudio.loadState == AudioDataLoadState.Unloaded) introAudio.LoadAudioData();
@@ -261,9 +269,9 @@ public sealed class VRExperienceDoor : MonoBehaviour
     private void SetIntroReady(bool ready)
     {
         introComplete = ready;
-        startButton?.SetEnabled(ready && !started);
+        startButton?.SetEnabled(!started);
         if (introStatus != null)
-            introStatus.text = ready ? "Ready when you are. Select Start Experience." : "Listen to the introduction…";
+            introStatus.text = ready ? "Ready when you are. Select Start Experience." : "Listen to the introduction, or select Start Experience to continue.";
         RefreshHitTargets();
     }
 
@@ -284,7 +292,7 @@ public sealed class VRExperienceDoor : MonoBehaviour
 
     private void StartExperience()
     {
-        if (started || !introComplete) return;
+        if (started) return;
         if (doorAnimator == null || doorOpenClip == null || doorCloseClip == null || playerOrigin == null || equipmentArrival == null)
         {
             if (introStatus != null) introStatus.text = "Entry setup is incomplete. Check the scene references.";
@@ -298,6 +306,7 @@ public sealed class VRExperienceDoor : MonoBehaviour
             return;
         }
         started = true;
+        if (introSource != null) introSource.Stop();
         startButton?.SetEnabled(false);
         CancelInvoke(nameof(RefreshHitTargets));
         foreach (var target in targets.Values)

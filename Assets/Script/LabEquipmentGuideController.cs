@@ -23,10 +23,17 @@ public sealed class LabEquipmentGuideController : MonoBehaviour
     [SerializeField] private RectTransform hitTargetRoot;
     [SerializeField] private EquipmentSlide[] slides;
     [SerializeField] private string nextScene = "Assets/Scenes/StarterScene.unity";
+    [Tooltip("Played once when the Learning Complete slide appears. Drag the completion voice-over clip here.")]
+    [SerializeField] private AudioClip completionVoiceOver;
+    [Header("Process overview")]
+    [SerializeField] private bool showProcessOverview = true;
+    [Tooltip("Optional narration for the overview shown before equipment learning.")]
+    [SerializeField] private AudioClip overviewVoiceOver;
     [SerializeField] private AudioSource narrationSource;
+    [SerializeField, Range(0f, 1f)] private float narrationVolume = 0.65f;
     private int narratedSlideIndex = -1;
     private Coroutine narrationRoutine;
-    private bool narrationInProgress;
+    private bool overviewComplete;
     private VisualElement root;
     private Button boundNext;
     private int currentIndex;
@@ -37,6 +44,7 @@ public sealed class LabEquipmentGuideController : MonoBehaviour
     public int CurrentSlideIndex => currentIndex;
     public int SlideCount => slides == null ? 0 : slides.Length;
     public bool IsComplete => complete;
+    public bool IsOverview => showProcessOverview && !overviewComplete;
     public EquipmentSlide[] Slides => slides;
 
     private void Awake()
@@ -60,6 +68,8 @@ public sealed class LabEquipmentGuideController : MonoBehaviour
     {
         UnbindView(); root = view;
         boundNext = root.Q<Button>("next-equipment");
+        Bind("play-overview", PlayOverview);
+        Bind("continue-to-equipment", ContinueToEquipment);
         Bind("previous-equipment", Previous);
         Bind("next-equipment", Next);
         Bind("retake-learning", Retake);
@@ -85,24 +95,41 @@ public sealed class LabEquipmentGuideController : MonoBehaviour
     private void OnKeyDown(KeyDownEvent evt)
     {
         if (complete || loading) return;
+        if (IsOverview) { if (evt.keyCode == KeyCode.RightArrow) { ContinueToEquipment(); evt.StopPropagation(); } return; }
         if (evt.keyCode == KeyCode.LeftArrow) { Previous(); evt.StopPropagation(); }
         else if (evt.keyCode == KeyCode.RightArrow) { Next(); evt.StopPropagation(); }
     }
     public void Previous()
-    { if (!complete && !loading && !narrationInProgress && currentIndex > 0) { currentIndex--; Refresh(); } }
+    { if (!IsOverview && !complete && !loading && currentIndex > 0) { currentIndex--; Refresh(); } }
     public void Next()
     {
-        if (loading || complete || narrationInProgress || SlideCount == 0) return;
+        if (IsOverview) { ContinueToEquipment(); return; }
+        if (loading || complete || SlideCount == 0) return;
         if (currentIndex < SlideCount - 1) currentIndex++;
         else complete = true;
         Refresh();
         if (complete) root?.Q<Button>("retake-learning")?.Focus();
     }
+    public void ContinueToEquipment()
+    {
+        if (loading || !IsOverview) return;
+        StopNarration();
+        overviewComplete = true;
+        currentIndex = 0;
+        Refresh();
+        root?.Q<Button>("next-equipment")?.Focus();
+    }
+    public void PlayOverview()
+    {
+        if (!IsOverview || loading || overviewVoiceOver == null) return;
+        StopNarration();
+        PlayCurrentNarration();
+    }
     public void Retake()
     {
-        if (loading || narrationInProgress) return;
+        if (loading) return;
         StopNarration();
-        currentIndex = 0; complete = false; Refresh();
+        overviewComplete = true; currentIndex = 0; complete = false; Refresh();
         root?.Q<Button>("next-equipment")?.Focus();
     }
     public void Proceed()
@@ -127,8 +154,13 @@ public sealed class LabEquipmentGuideController : MonoBehaviour
         if (root == null || SlideCount == 0) return;
         currentIndex = Mathf.Clamp(currentIndex, 0, SlideCount - 1);
         var slide = slides[currentIndex];
-        root.Q<VisualElement>("learning-view").EnableInClassList("hidden", complete);
-        root.Q<VisualElement>("completion-view").EnableInClassList("hidden", !complete);
+        root.Q<VisualElement>("overview-view")?.EnableInClassList("hidden", !IsOverview);
+        var header = root.Q<Label>(className: "header-title");
+        if (header != null) header.text = IsOverview ? "Your PCR learning journey" : "Equipment Used";
+        var overviewPlay = root.Q<Button>("play-overview");
+        if (overviewPlay != null) overviewPlay.EnableInClassList("hidden", overviewVoiceOver == null);
+        root.Q<VisualElement>("learning-view").EnableInClassList("hidden", complete || IsOverview);
+        root.Q<VisualElement>("completion-view").EnableInClassList("hidden", !complete || IsOverview);
         root.Q<Label>("equipment-title").text = slide.title;
         root.Q<Label>("equipment-function").text = slide.function;
         root.Q<Label>("slide-position").text = (currentIndex + 1) + " / " + SlideCount;
@@ -147,20 +179,27 @@ public sealed class LabEquipmentGuideController : MonoBehaviour
     {
         // Editor previews should not start audio, and ordinary refreshes should not replay it.
         if (!Application.isPlaying) return;
-        if (complete || loading || SlideCount == 0)
+        if (loading || SlideCount == 0)
         { StopNarration(); return; }
-        if (narratedSlideIndex == currentIndex) return;
+        int narrationIndex = IsOverview ? -2 : complete ? SlideCount : currentIndex;
+        if (narratedSlideIndex == narrationIndex) return;
         StopNarration();
-        narratedSlideIndex = currentIndex;
-        var clip = slides[currentIndex].voiceOver;
+        narratedSlideIndex = narrationIndex;
+        var clip = IsOverview ? overviewVoiceOver : complete ? completionVoiceOver : slides[currentIndex].voiceOver;
         if (clip == null) return;
         if (narrationSource == null) narrationSource = gameObject.AddComponent<AudioSource>();
         narrationSource.playOnAwake = false;
         narrationSource.loop = false;
         narrationSource.spatialBlend = 0f;
         narrationSource.pitch = 1f;
+        narrationSource.volume = narrationVolume;
+        narrationSource.dopplerLevel = 0f;
+        narrationSource.reverbZoneMix = 0f;
+        var speechFilter = narrationSource.GetComponent<AudioHighPassFilter>();
+        if (speechFilter == null) speechFilter = narrationSource.gameObject.AddComponent<AudioHighPassFilter>();
+        speechFilter.cutoffFrequency = 120f;
+        speechFilter.highpassResonanceQ = 1f;
         narrationSource.clip = clip;
-        narrationInProgress = true;
         narrationRoutine = StartCoroutine(PlayNarrationToEnd(clip));
     }
 
@@ -176,7 +215,6 @@ public sealed class LabEquipmentGuideController : MonoBehaviour
             yield return null;
             while (narrationSource.isPlaying || AudioListener.pause) yield return null;
         }
-        narrationInProgress = false;
         narrationRoutine = null;
         RefreshNarrationControls();
     }
@@ -184,12 +222,12 @@ public sealed class LabEquipmentGuideController : MonoBehaviour
     private void RefreshNarrationControls()
     {
         if (root == null) return;
-        root.Q<Button>("previous-equipment")?.SetEnabled(currentIndex > 0 && !loading && !narrationInProgress);
-        root.Q<Button>("next-equipment")?.SetEnabled(!loading && !narrationInProgress);
+        root.Q<Button>("previous-equipment")?.SetEnabled(currentIndex > 0 && !loading);
+        root.Q<Button>("next-equipment")?.SetEnabled(!loading);
+        root.Q<Button>("retake-learning")?.SetEnabled(!loading);
+        root.Q<Button>("proceed-next-step")?.SetEnabled(!loading);
         if (!complete)
-            root.Q<Button>("next-equipment").tooltip = narrationInProgress
-                ? "Listen to the full narration before continuing"
-                : currentIndex == SlideCount - 1 ? "Finish learning" : "Next equipment";
+            root.Q<Button>("next-equipment").tooltip = currentIndex == SlideCount - 1 ? "Finish learning" : "Next equipment";
         RefreshTargets();
     }
 
@@ -197,7 +235,6 @@ public sealed class LabEquipmentGuideController : MonoBehaviour
     {
         if (narrationRoutine != null) StopCoroutine(narrationRoutine);
         narrationRoutine = null;
-        narrationInProgress = false;
         if (narrationSource != null)
         {
             narrationSource.Stop();
