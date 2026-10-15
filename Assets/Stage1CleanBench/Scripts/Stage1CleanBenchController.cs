@@ -8,6 +8,10 @@ using UnityEngine.XR.Interaction.Toolkit.UI;
 public sealed class Stage1CleanBenchController : MonoBehaviour
 {
 [SerializeField] private XRGrabInteractable labCoat, protectiveGloves, cleaningSpray, cleaningWipe;
+[SerializeField] private XRGrabInteractable[] additionalGloves = new XRGrabInteractable[0];
+private readonly System.Collections.Generic.HashSet<GameObject> equippedItems = new System.Collections.Generic.HashSet<GameObject>();
+[SerializeField] private PCRProtocolController protocolFlow;
+private bool protocolQueued;
 [SerializeField] private Stage1CleaningReadiness cleaningReadiness;
 [SerializeField] private PCRGuideUIController plateLayoutGuide;
 [SerializeField] private GameObject plateLayoutUIRoot;
@@ -27,36 +31,36 @@ if (!cleaningSpray) cleaningSpray=FindGrab("CleaningSpray_ExistingVisual"); if (
 if (!cleaningReadiness) cleaningReadiness=GetComponent<Stage1CleaningReadiness>();
 if (cleaningReadiness) cleaningReadiness.Completed += OnCleaningReady;
 Subscribe(labCoat); Subscribe(protectiveGloves);
+foreach(var glove in additionalGloves) if(glove != protectiveGloves) Subscribe(glove);
 CreateToolkitWorldPanel(); RefreshChecklist();
 }
 private void OnDestroy()
 {
 Unsubscribe(labCoat); Unsubscribe(protectiveGloves);
+foreach(var glove in additionalGloves) if(glove != protectiveGloves) Unsubscribe(glove);
 if (cleaningReadiness) cleaningReadiness.Completed -= OnCleaningReady;
 if(panelTexture!=null) panelTexture.Release(); if(runtimePanelSettings!=null) Destroy(runtimePanelSettings);
 }
 private XRGrabInteractable FindGrab(string n){var g=GameObject.Find(n);return g?g.GetComponent<XRGrabInteractable>():null;}
-private void Subscribe(XRGrabInteractable i){if(i!=null)i.selectExited.AddListener(OnItemReleased);}
-private void Unsubscribe(XRGrabInteractable i){if(i!=null)i.selectExited.RemoveListener(OnItemReleased);}
-private void OnItemReleased(SelectExitEventArgs args)
+private void Subscribe(XRGrabInteractable i){if(i!=null)i.selectEntered.AddListener(OnItemGrabbed);}
+private void Unsubscribe(XRGrabInteractable i){if(i!=null)i.selectEntered.RemoveListener(OnItemGrabbed);}
+private void OnItemGrabbed(SelectEnterEventArgs args)
 {
-var go=args.interactableObject.transform.gameObject;
-if(labCoat&&go==labCoat.gameObject&&!coatDone) StartCoroutine(WearItem(go,true));
-else if(protectiveGloves&&go==protectiveGloves.gameObject&&!glovesDone) StartCoroutine(WearItem(go,false));
-
-RefreshChecklist();
+    var item=args.interactableObject.transform.gameObject;
+    if (!equippedItems.Add(item)) return;
+    bool isCoat=labCoat && item==labCoat.gameObject;
+    // Hide immediately; let all select-enter listeners (including hand swapping) finish first.
+    foreach(var renderer in item.GetComponentsInChildren<Renderer>(true)) renderer.enabled=false;
+    if(isCoat&&!coatDone){coatDone=true;AddScore(coatPoints);SetFeedback("Laboratory coat equipped.","Protective clothing is ready for the clean-bench task.",false);}
+    if(!isCoat&&!glovesDone){glovesDone=true;AddScore(glovePoints);SetFeedback("Protective gloves equipped.","You are ready to continue preparing the bench.",false);}
+    RefreshChecklist();
+    StartCoroutine(RemoveEquippedItem(item));
 }
-private IEnumerator WearItem(GameObject item,bool isCoat)
+private IEnumerator RemoveEquippedItem(GameObject item)
 {
-var camera=Camera.main;
-if(camera){Vector3 start=item.transform.position;Quaternion startRotation=item.transform.rotation;Vector3 target=camera.transform.position+camera.transform.forward*.35f+Vector3.down*.25f;Quaternion targetRotation=camera.transform.rotation;float elapsed=0;
-while(elapsed<.35f){elapsed+=Time.deltaTime;float t=Mathf.Clamp01(elapsed/.35f);item.transform.position=Vector3.Lerp(start,target,t);item.transform.rotation=Quaternion.Slerp(startRotation,targetRotation,t);yield return null;}}
-foreach(var r in item.GetComponentsInChildren<Renderer>())r.enabled=false;
-foreach(var c in item.GetComponentsInChildren<Collider>())c.enabled=false;
-var grab=item.GetComponent<XRGrabInteractable>();if(grab)grab.enabled=false;
-if(isCoat&&!coatDone){coatDone=true;AddScore(coatPoints);SetFeedback("Laboratory coat equipped.","Protective clothing is ready for the clean-bench task.",false);}
-if(!isCoat&&!glovesDone){glovesDone=true;AddScore(glovePoints);SetFeedback("Protective gloves equipped.","You are ready to continue preparing the bench.",false);}
-RefreshChecklist();
+    yield return null;
+    // Deactivation unregisters the grab and removes its physics and labels for this run.
+    if(item) item.SetActive(false);
 }
 private void OnCleaningReady()
 {
@@ -79,6 +83,7 @@ SetItem(coatStatus,coatDone,"PPE","Wear laboratory coat");SetItem(gloveStatus,gl
 SetItem(cleaningStatus,cleaningDone,"SURFACE","Open slide; hold cleaner and spray");
 if(scoreLabel!=null)scoreLabel.text=coatPoints+glovePoints+cleaningPoints>0?"SCORE  "+score:"SCORING  RUBRIC PENDING";
 if(stageState!=null)stageState.text=complete?"READY TO CONTINUE":"IN PROGRESS";if(nextButton!=null)nextButton.SetEnabled(complete);if(nextProxy!=null)nextProxy.interactable=complete;
+if(complete && protocolFlow && !protocolQueued){protocolQueued=true;StartCoroutine(AdvanceToProtocol());}
 if(complete)SetFeedback("Stage 1 complete.","Your workstation is prepared and Stage 2 is unlocked.",false);
 }
 private void SetItem(Label label,bool done,string tag,string title)
@@ -86,9 +91,11 @@ private void SetItem(Label label,bool done,string tag,string title)
 if(label==null)return;label.text=(done?"✓   ":"○   ")+title;label.parent.parent.EnableInClassList("done",done);
 var eyebrow=label.parent.Q<Label>(className:"item-tag");if(eyebrow!=null)eyebrow.text=tag;
 }
+private IEnumerator AdvanceToProtocol(){yield return new WaitForSeconds(2f);OnNextStageClicked();}
 private void OnNextStageClicked()
 {
 if (!coatDone || !glovesDone || !cleaningDone) return;
+if(protocolFlow){protocolFlow.BeginProtocol();var oldPanel=transform.Find("Stage1_CleanBench_WorldPanel");if(oldPanel)oldPanel.gameObject.SetActive(false);return;}
 if (!plateLayoutGuide || !plateLayoutUIRoot || !plateLayoutWorldPanel)
 { SetFeedback("Stage 2 configuration missing.","Assign the existing plate-layout guide and world panel.",true); return; }
 var panel=transform.Find("Stage1_CleanBench_WorldPanel");
